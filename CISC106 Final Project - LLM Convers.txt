@@ -1,0 +1,69 @@
+CISC106 Final Project - LLM Conversation Log
+
+User: I am brainstorming ideas for my CISC106 final project in Drafter. I want to make a simple website for college students to track their monthly budget and expenses. What are 3 common problems students have with budgeting, and what are 3 simple features my site could have?
+
+AI: Here are 3 common budgeting problems college students face:
+1. Small Purchases Adding Up: Students often forget to track small daily buys like coffee or snacks.
+2. Needs vs. Wants Confusion: It is hard to tell how much money is going toward essential school and living costs versus fun spending.
+3. Late Realization: Students often only check their balance after they have already overspent for the month.
+
+Three simple features your Drafter tool could have:
+1. Quick Expense Logger: Let users enter the item name, cost, and category.
+2. Needs vs. Wants Breakdown: A summary page showing how much was spent on essentials vs. non-essentials.
+3. Budget Status Warning: Show how much money is left and warn them if they pass 80% or 100% of their budget.
+
+---
+
+User: That helps. For my Part 1 design worksheet, I need at least 5 pages, 7 routes, a State dataclass with at least 4 fields (including a list of a second dataclass), 3 input types, 3 if statements, and 1 for loop. Right now I have an Expense dataclass with name, category, cost, and is_essential. How should I organize my 5 pages and routes so they all connect cleanly?
+
+AI: Having an Expense dataclass with name (str), category (str), cost (float), and is_essential (bool) is a great start. Here is a simple way to organize your 5 pages and routes:
+
+1. Home Dashboard (index): Shows the budget, total spent, remaining money, and navigation buttons.
+2. Budget Setup Page (budget_page and save_budget): Uses TextBox inputs so the user can update user_name and monthly_budget in State.
+3. Add Expense Page (add_expense_page and submit_expense): Uses TextBox, SelectBox, and CheckBox inputs to create a new Expense and append it to state.expenses.
+4. View & Filter Expenses Page (show_all_expenses, view_expenses, and clear_expenses): Uses a SelectBox to filter state.expenses by category using a for loop and an if statement, plus a button to clear the list.
+5. Spending Summary Page (summary_page): Uses a for loop and if statements to add up Needs vs. Wants and find the biggest expense.
+
+---
+
+User: I am coding my routes in Thonny now. When I use a TextBox to get the cost or budget from the user, Drafter passes it into my route function as a string. How do I safely convert that string into a float using basic CISC106 string methods so my program doesn't crash if someone types letters or leaves it blank?
+
+AI: Since TextBox inputs always pass strings into your route parameters, you can write a small helper function using the .isdigit() string method before calling float():
+
+def string_to_float(text: str, default_number: float) -> float:
+    """Converts a string of digits to a float or returns the default."""
+    if text.isdigit():
+        return float(text)
+    else:
+        return default_number
+
+If the user types a valid whole number like "50", text.isdigit() is True and it returns 50.0. If they leave it blank or type letters, it returns your default_number so your site doesn't crash.
+
+---
+
+User: I got an error when clicking my "View Expenses" button from the Home page because view_expenses expects both state and category_filter: str from the SelectBox, which isn't on the Home page. How do I fix that?
+
+AI: In Drafter, a button on the Home page can only pass parameters from inputs that exist on the Home page. Since the SelectBox("category_filter", ...) is on the Expense List page and not the Home page, you can create a simple route for your Home page button that only takes state: State and passes state.selected_category to view_expenses:
+
+@route
+def show_all_expenses(state: State) -> Page:
+    """Opens the expense list page with the current category filter."""
+    return view_expenses(state, state.selected_category)
+
+Then use Button("View Expenses", show_all_expenses) on your index page, and keep Button("Apply Filter", view_expenses) on your expense list page.
+
+---
+
+User: That fixed it! One last question: what is the cleanest way to write assert_equal unit tests for action routes like save_budget and clear_expenses that modify state and then return index(state)?
+
+AI: Because save_budget and clear_expenses modify the State fields and end with return index(state), their return value is the Page returned by index with the updated State. Instead of re-typing the whole Page list in your test, you can compare the route call directly against calling index with the expected updated State:
+
+assert_equal(
+    save_budget(State("Student", 500.0, [], "All", "Welcome!"), "Sam", "600"),
+    index(State("Sam", 600.0, [], "All", "Budget updated to $600.0."))
+)
+
+assert_equal(
+    clear_expenses(State("Student", 500.0, [Expense("Pizza", "Food", 15.0, False)], "Food", "OK")),
+    index(State("Student", 500.0, [], "All", "Cleared all expenses."))
+)
